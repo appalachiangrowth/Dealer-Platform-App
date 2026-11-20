@@ -6,7 +6,7 @@ import * as SecureStore from 'expo-secure-store';
  *  2. EXPO_PUBLIC_API_URL from .env / eas.json
  *  3. the live Contabo VPS backend (same default as dealer-portal/next.config.ts)
  */
-export const DEFAULT_API_URL = 'http://5.183.35.10:4000';
+export const DEFAULT_API_URL = 'https://api.revixasolutions.com';
 const OVERRIDE_KEY = 'dp_api_url';
 
 export function cleanUrl(raw: string): string {

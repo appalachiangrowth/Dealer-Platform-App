@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building2, ChevronRight, LogOut, Palette, Upload } from 'lucide-react-native';
+import { Building2, ChevronRight, LogOut, Palette, Trash2, Upload } from 'lucide-react-native';
 import { api, ApiError, mediaUrl, uploadPhoto } from '../../src/lib/api';
 import { ENV_API_URL, getApiUrl, setApiUrl } from '../../src/lib/config';
 import { useSession } from '../../src/lib/session';
@@ -148,6 +148,56 @@ export default function BusinessTab() {
     </Pressable>
   ) : null;
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      // Attempt endpoint variants for account deletion
+      let deleted = false;
+      try {
+        await api('/dealer/auth/account', { method: 'DELETE' });
+        deleted = true;
+      } catch (err: unknown) {
+        if (err instanceof ApiError && (err.status === 404 || err.status === 405 || err.status === 501)) {
+          await api('/dealer/account', { method: 'DELETE' });
+          deleted = true;
+        } else {
+          throw err;
+        }
+      }
+      notify(true);
+      Alert.alert('Account Deleted', 'Your account and associated data have been permanently removed.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            void logout();
+          },
+        },
+      ]);
+    } catch (e: unknown) {
+      notify(false);
+      const msg = (e as Error)?.message || 'Unable to delete account. Please contact support.';
+      Alert.alert('Could Not Delete Account', msg);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const confirmDeleteAccount = () =>
+    Alert.alert(
+      'Delete Account & Dealership?',
+      'This will permanently delete your user account, dealership profile, and associated inventory. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Permanently',
+          style: 'destructive',
+          onPress: () => void handleDeleteAccount(),
+        },
+      ]
+    );
+
   const appInfo = (
     <Card>
       <SectionTitle>App info</SectionTitle>
@@ -173,6 +223,22 @@ export default function BusinessTab() {
     </Card>
   );
 
+  const dangerZone = (
+    <Card style={{ borderColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 1, marginTop: 14 }}>
+      <SectionTitle>Danger Zone</SectionTitle>
+      <Text style={[st.small, { marginBottom: 12, color: C.muted }]}>
+        Permanently remove your account, active login sessions, and all dealership data.
+      </Text>
+      <Button
+        title="Delete Account"
+        variant="danger"
+        icon={<Trash2 size={18} color="#FFFFFF" />}
+        loading={isDeleting}
+        onPress={confirmDeleteAccount}
+      />
+    </Card>
+  );
+
   if (q.isLoading) return <Loading />;
   if (q.error || !form) {
     const denied = q.error instanceof ApiError && q.error.status === 403;
@@ -182,6 +248,7 @@ export default function BusinessTab() {
         {denied ? <Notice tone="warn">Your login does not have the “Business details” permission. Ask your dealership admin.</Notice> : null}
         {designLink}
         {appInfo}
+        {dangerZone}
       </Screen>
     );
   }
@@ -262,6 +329,8 @@ export default function BusinessTab() {
         {designLink}
 
         {appInfo}
+
+        {dangerZone}
       </Screen>
     </KeyboardAvoidingView>
   );

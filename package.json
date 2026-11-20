@@ -1,0 +1,43 @@
+{
+  "name": "dealer-platform-app",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "doctor": "npx expo-doctor@latest",
+    "build:apk": "eas build -p android --profile preview",
+    "build:apk:local": "eas build -p android --profile preview --local",
+    "prebuild:android": "expo prebuild -p android --clean",
+    "fix-versions": "expo install --fix"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.0",
+    "expo": "~58.0.0",
+    "expo-build-properties": "~58.0.0",
+    "expo-clipboard": "~58.0.0",
+    "expo-constants": "~58.0.0",
+    "expo-haptics": "~58.0.0",
+    "expo-image-manipulator": "~58.0.0",
+    "expo-image-picker": "~58.0.0",
+    "expo-linking": "~58.0.0",
+    "expo-router": "~58.0.0",
+    "expo-secure-store": "~58.0.0",
+    "expo-splash-screen": "~58.0.0",
+    "expo-status-bar": "~58.0.0",
+    "expo-video-thumbnails": "~58.0.0",
+    "lucide-react-native": "^0.475.0",
+    "react": "19.3.0",
+    "react-native": "~0.88.0",
+    "react-native-safe-area-context": "^5.6.0",
+    "react-native-screens": "^4.16.0",
+    "react-native-svg": "^15.16.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "typescript": "^6.0.0"
+  }
+}

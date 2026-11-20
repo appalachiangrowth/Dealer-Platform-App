@@ -1,0 +1,26 @@
+Build started Sat 11/14/2026 22:54:03.99 
+node v26.8.1 
+---- npm install ---- 
+
+up to date, audited 522 packages in 2s
+
+53 packages are looking for funding
+  run `npm fund` for details
+
+3 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+---- expo install --fix ---- 
+env: load .env
+env: export EXPO_PUBLIC_API_URL
+Dependencies are up to date
+---- tsc --noEmit ---- 
+TSC_OK 
+SDK= HAVEJAVA= JAVA_HOME= 
+---- eas (cloud) ---- 
+EAS_BUILD_FAILED  
+BUILD_STOPPED 
+Finished Sat 11/14/2026 23:03:21.88 

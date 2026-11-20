@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+dist/
+web-build/
+android/
+ios/
+*.apk
+*.aab
+*.jks
+*.keystore
+expo-env.d.ts
+.env.local
+npm-debug.*
+.DS_Store

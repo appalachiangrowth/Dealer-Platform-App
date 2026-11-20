@@ -275,26 +275,34 @@ export default function FacebookTab() {
 
   // Determine the Dealer Web Portal URL for Facebook connection
   const portalUrl = useMemo(() => {
+    const toAdminFb = (base: string) => {
+      const clean = base.trim().replace(/\/+$/, '');
+      if (clean.endsWith('/admin')) {
+        return `${clean}/dealer/facebook`;
+      }
+      return `${clean}/admin/dealer/facebook`;
+    };
+
     const siteUrl = me?.tenant?.siteUrl?.trim();
     if (siteUrl && /^https?:\/\//i.test(siteUrl)) {
-      return `${siteUrl.replace(/\/+$/, '')}/dealer/facebook`;
+      return toAdminFb(siteUrl);
     }
     const apiHost = getApiUrl().trim();
     if (/revixasolutions\.com/i.test(apiHost)) {
-      return 'https://portal.revixasolutions.com/dealer/facebook';
+      return toAdminFb('https://portal.revixasolutions.com');
     }
     if (/localhost|127\.0\.0\.1/i.test(apiHost)) {
-      return 'http://localhost:3000/dealer/facebook';
+      return toAdminFb('http://localhost:3000');
     }
     if (/^https?:\/\/\d+\.\d+\.\d+\.\d+/i.test(apiHost)) {
       try {
         const u = new URL(apiHost);
-        return `http://${u.hostname}:3000/dealer/facebook`;
+        return toAdminFb(`http://${u.hostname}:3000`);
       } catch {
         /* fallback */
       }
     }
-    return 'https://portal.revixasolutions.com/dealer/facebook';
+    return toAdminFb('https://portal.revixasolutions.com');
   }, [me?.tenant?.siteUrl]);
 
   const openPortalFacebook = async () => {

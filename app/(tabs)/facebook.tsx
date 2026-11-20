@@ -1,14 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, AppState, type AppStateStatus, FlatList, Image, Linking, Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronRight, Facebook, ImageOff, RefreshCw, Search, Square, X } from 'lucide-react-native';
+import { Check, ChevronRight, ExternalLink, Facebook, Globe, ImageOff, RefreshCw, Search, Square, X } from 'lucide-react-native';
 import { api, mediaUrl } from '../../src/lib/api';
 import { C, R } from '../../src/lib/theme';
 import { cover, dateTime, money, vehicleName } from '../../src/lib/format';
 import type { FbItem, FbQuickConfig, FbResult, FbRun, FbState, Vehicle, VehicleList } from '../../src/lib/types';
 import { Badge, Button, Card, Field, Input, Notice, Screen, SectionTitle, notify, tap } from '../../src/components/ui';
+import { useSession } from '../../src/lib/session';
+import { getApiUrl } from '../../src/lib/config';
 
 const MAX_MEDIA = 20;
 const FB = '/dealer/facebook';
@@ -83,6 +85,7 @@ export default function FacebookTab() {
   const router = useRouter();
   const qc = useQueryClient();
   const params = useLocalSearchParams<{ vehicleId?: string }>();
+  const { me, dealership } = useSession();
   const [focused, setFocused] = useState(false);
   const [picker, setPicker] = useState(false);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
@@ -252,10 +255,62 @@ export default function FacebookTab() {
   };
 
   const refreshing = cfg.isRefetching || history.isRefetching;
-  const refresh = () => {
+  const refresh = useCallback(() => {
     void cfg.refetch();
     void history.refetch();
     void state.refetch();
+  }, [cfg, history, state]);
+
+  // Auto-refresh Facebook status when the app returns to the foreground
+  const appState = useRef<string>(AppState.currentState || 'active');
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (/inactive|background/.test(appState.current) && nextState === 'active') {
+        refresh();
+      }
+      appState.current = nextState;
+    });
+    return () => sub.remove();
+  }, [refresh]);
+
+  // Determine the Dealer Web Portal URL for Facebook connection
+  const portalUrl = useMemo(() => {
+    const siteUrl = me?.tenant?.siteUrl?.trim();
+    if (siteUrl && /^https?:\/\//i.test(siteUrl)) {
+      return `${siteUrl.replace(/\/+$/, '')}/dealer/facebook`;
+    }
+    const apiHost = getApiUrl().trim();
+    if (/revixasolutions\.com/i.test(apiHost)) {
+      return 'https://portal.revixasolutions.com/dealer/facebook';
+    }
+    if (/localhost|127\.0\.0\.1/i.test(apiHost)) {
+      return 'http://localhost:3000/dealer/facebook';
+    }
+    if (/^https?:\/\/\d+\.\d+\.\d+\.\d+/i.test(apiHost)) {
+      try {
+        const u = new URL(apiHost);
+        return `http://${u.hostname}:3000/dealer/facebook`;
+      } catch {
+        /* fallback */
+      }
+    }
+    return 'https://portal.revixasolutions.com/dealer/facebook';
+  }, [me?.tenant?.siteUrl]);
+
+  const openPortalFacebook = async () => {
+    tap();
+    try {
+      const supported = await Linking.canOpenURL(portalUrl).catch(() => false);
+      if (supported) {
+        await Linking.openURL(portalUrl);
+      } else {
+        await Linking.openURL(portalUrl).catch(() => {
+          Alert.alert('Unable to open browser', `Please open this address in your browser:\n\n${portalUrl}`);
+        });
+      }
+    } catch {
+      Alert.alert('Unable to open browser', `Please open this address in your browser:\n\n${portalUrl}`);
+    }
   };
 
   return (
@@ -276,11 +331,45 @@ export default function FacebookTab() {
           </>
         ) : cfg.data ? (
           <>
-            <Text style={st.body}>
-              Facebook runs in a browser on the server, one login per user. Log in to Facebook once in the web Dealership Portal (FB Poster › Connect). After that
-              the saved login is used here.
+            <View style={{ marginTop: 8, marginBottom: 12 }}>
+              <Notice tone="info">
+                Facebook is connected securely via the Dealer Web Portal. Once you sign in to Facebook there, daily vehicle posting and Marketplace listings work directly inside this mobile app.
+              </Notice>
+            </View>
+            <Text style={[st.body, { marginBottom: 14 }]}>
+              {cfg.data.connection.loginLost
+                ? 'Your Facebook session expired. Please open the Dealer Web Portal to log in again.'
+                : 'Connect your Facebook account in your browser to post vehicles to your Pages and Marketplace.'}
             </Text>
-            {cfg.data.account.fbUserId ? <Button small variant="secondary" title="Reconnect with the saved login" onPress={() => connect.mutate()} loading={connect.isPending} style={{ marginTop: 12 }} /> : null}
+            <View style={{ gap: 10 }}>
+              <Button
+                variant="facebook"
+                title="Connect in Browser"
+                icon={<ExternalLink size={18} color="#FFFFFF" />}
+                onPress={openPortalFacebook}
+              />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Button
+                  small
+                  variant="secondary"
+                  title="Refresh Status"
+                  icon={<RefreshCw size={15} color={C.ink} />}
+                  onPress={refresh}
+                  loading={cfg.isRefetching}
+                  style={{ flex: 1 }}
+                />
+                {cfg.data.account.fbUserId ? (
+                  <Button
+                    small
+                    variant="secondary"
+                    title="Reconnect Saved"
+                    onPress={() => connect.mutate()}
+                    loading={connect.isPending}
+                    style={{ flex: 1 }}
+                  />
+                ) : null}
+              </View>
+            </View>
           </>
         ) : null}
       </Card>

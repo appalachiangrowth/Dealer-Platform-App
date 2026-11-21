@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Building2, ChevronRight, ExternalLink, LogOut, Palette, Shield, Trash2, Upload } from 'lucide-react-native';
 import { api, ApiError, mediaUrl, uploadPhoto } from '../../src/lib/api';
-import { ENV_API_URL, getApiUrl, setApiUrl } from '../../src/lib/config';
 import { useSession } from '../../src/lib/session';
 import { C, R } from '../../src/lib/theme';
 import type { Hours, SettingsAnswer } from '../../src/lib/types';
@@ -32,7 +31,6 @@ export default function BusinessTab() {
   const [saved, setSaved] = useState<Form | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof Form, string>>>({});
   const [logoPct, setLogoPct] = useState<number | null>(null);
-  const [server, setServer] = useState(getApiUrl());
 
   const q = useQuery({ queryKey: ['settings'], queryFn: () => api<SettingsAnswer>('/dealer/settings') });
   const data = q.data;
@@ -116,21 +114,6 @@ export default function BusinessTab() {
     }
   };
 
-  const changeServer = () =>
-    Alert.alert('Change the API server?', 'You will be logged out and log in again on the new server.', [
-      { text: 'Cancel', style: 'cancel', onPress: () => setServer(getApiUrl()) },
-      {
-        text: 'Change',
-        style: 'destructive',
-        onPress: () => {
-          void (async () => {
-            await setApiUrl(server);
-            await logout();
-          })();
-        },
-      },
-    ]);
-
   const confirmLogout = () =>
     Alert.alert('Log out?', undefined, [
       { text: 'Cancel', style: 'cancel' },
@@ -209,15 +192,9 @@ export default function BusinessTab() {
         <Text style={st.k}>Dealership</Text>
         <Text style={st.v}>{dealership?.name} · {dealership?.id}</Text>
       </View>
-      <View style={st.kv}>
+      <View style={[st.kv, { marginBottom: 14 }]}>
         <Text style={st.k}>App version</Text>
         <Text style={st.v}>{Constants.expoConfig?.version || '1.0.0'}</Text>
-      </View>
-      <View style={{ marginTop: 12 }}>
-        <Field label="Connected API server" hint={`Built-in address: ${ENV_API_URL}`}>
-          <Input value={server} onChangeText={setServer} autoCapitalize="none" autoCorrect={false} keyboardType="url" />
-        </Field>
-        {server.trim().replace(/\/+$/, '') !== getApiUrl() ? <Button small variant="secondary" title="Use this server" onPress={changeServer} style={{ marginBottom: 12 }} /> : null}
       </View>
       <Button title="Logout" variant="danger" icon={<LogOut size={18} color="#FFFFFF" />} onPress={confirmLogout} />
     </Card>

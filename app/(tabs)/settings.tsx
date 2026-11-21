@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building2, ChevronRight, LogOut, Palette, Trash2, Upload } from 'lucide-react-native';
+import { Building2, ChevronRight, ExternalLink, LogOut, Palette, Shield, Trash2, Upload } from 'lucide-react-native';
 import { api, ApiError, mediaUrl, uploadPhoto } from '../../src/lib/api';
 import { ENV_API_URL, getApiUrl, setApiUrl } from '../../src/lib/config';
 import { useSession } from '../../src/lib/session';
@@ -223,6 +223,34 @@ export default function BusinessTab() {
     </Card>
   );
 
+  const PRIVACY_POLICY_URL = 'https://revixasolutions.com/privacy-policy';
+
+  const openPrivacyPolicy = async () => {
+    try {
+      const supported = await Linking.canOpenURL(PRIVACY_POLICY_URL).catch(() => false);
+      if (supported) {
+        await Linking.openURL(PRIVACY_POLICY_URL);
+      } else {
+        await Linking.openURL(PRIVACY_POLICY_URL).catch(() => {
+          Alert.alert('Unable to open browser', `Please open this address in your browser:\n\n${PRIVACY_POLICY_URL}`);
+        });
+      }
+    } catch {
+      Alert.alert('Unable to open browser', `Please open this address in your browser:\n\n${PRIVACY_POLICY_URL}`);
+    }
+  };
+
+  const privacyPolicyLink = (
+    <Pressable onPress={openPrivacyPolicy} style={st.link} accessibilityRole="button">
+      <Shield size={22} color={C.primary} />
+      <View style={{ flex: 1 }}>
+        <Text style={st.linkTitle}>Privacy Policy</Text>
+        <Text style={st.small}>How we handle and protect your data</Text>
+      </View>
+      <ExternalLink size={18} color={C.faint} />
+    </Pressable>
+  );
+
   const dangerZone = (
     <Card style={{ borderColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 1, marginTop: 14 }}>
       <SectionTitle>Danger Zone</SectionTitle>
@@ -247,6 +275,7 @@ export default function BusinessTab() {
       <Screen>
         {denied ? <Notice tone="warn">Your login does not have the “Business details” permission. Ask your dealership admin.</Notice> : null}
         {designLink}
+        {privacyPolicyLink}
         {appInfo}
         {dangerZone}
       </Screen>
@@ -327,6 +356,8 @@ export default function BusinessTab() {
         <Button title={dirty ? 'Save Changes' : 'Saved'} onPress={submit} loading={save.isPending} disabled={!dirty || !canEdit} style={{ marginBottom: 14 }} />
 
         {designLink}
+
+        {privacyPolicyLink}
 
         {appInfo}
 

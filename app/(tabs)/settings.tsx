@@ -223,7 +223,7 @@ export default function BusinessTab() {
     </Card>
   );
 
-  const PRIVACY_POLICY_URL = 'https://revixasolutions.com/privacy-policy';
+  const PRIVACY_POLICY_URL = 'https://appalachiangrowthsolutions.com/privacy-policy';
 
   const openPrivacyPolicy = async () => {
     try {
